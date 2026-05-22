@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './hooks/useAuth';
-import { useFontSize } from './components/FontSizeControl';
 import LoginPage from './pages/LoginPage';
 import TopNav from './components/TopNav';
 import OverviewTab from './pages/OverviewTab';
@@ -14,7 +13,6 @@ function Dashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedSchool, setSelectedSchool] = useState(user?.schoolId || 'mather');
-  const { size, increase, decrease } = useFontSize();
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -33,11 +31,8 @@ function Dashboard() {
         onTabChange={handleTabChange}
         selectedSchool={selectedSchool}
         onSchoolChange={handleSchoolChange}
-        fontSize={size}
-        onIncrease={increase}
-        onDecrease={decrease}
       />
-      <div style={{ flex: 1, background: 'var(--surface)', padding: '16px', overflowY: 'auto' }}>
+      <div style={{ flex: 1, background: 'var(--surface)', padding: '20px', overflowY: 'auto' }}>
         {activeTab === 'overview'   && <OverviewTab schoolId={selectedSchool} />}
         {activeTab === 'data'       && <DataTab schoolId={selectedSchool} />}
         {activeTab === 'partners'   && <PartnersTab schoolId={selectedSchool} />}
