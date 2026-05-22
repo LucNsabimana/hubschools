@@ -102,7 +102,7 @@ export default function SystemTab() {
   return (
     <div>
       <div style={{ marginBottom: 4 }}>
-        <div style={{ fontSize: 16, fontWeight: 500, color: '#e2e0db' }}>System Dashboard — Boston Community Hub Schools</div>
+        <div style={{ fontSize: 16, fontWeight: 500, color: '#e2e0db' }}>System Dashboard — BCHS Pulse</div>
         <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2 }}>20 schools · SY23-24 through SY25-26 · System-wide roll-up</div>
       </div>
 
