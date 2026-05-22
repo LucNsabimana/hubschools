@@ -103,7 +103,7 @@ export default function SystemTab() {
     <div>
       <div style={{ marginBottom: 4 }}>
         <div style={{ fontSize: 16, fontWeight: 500, color: '#e2e0db' }}>System Dashboard — BCHS Pulse</div>
-        <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2 }}>20 schools · SY23-24 through SY25-26 · System-wide roll-up</div>
+        <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2, display: 'flex', alignItems: 'center', gap: 8 }}>20 schools · SY23-24 through SY25-26 · System-wide roll-up <span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of May 1, 2026</span></div>
       </div>
 
       {/* Metric cards */}
