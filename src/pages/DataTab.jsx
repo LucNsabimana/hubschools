@@ -88,6 +88,51 @@ function TRow({ label, sy23, sy24, sy25, lowerBetter, isRaw, isHeader }) {
   );
 }
 
+function CopyTableButton({ schoolName, school, isMather, m }) {
+  const [copied, setCopied] = useState(false);
+  const pct = v => (v !== null && v !== undefined ? `${(v * 100).toFixed(1)}%` : '');
+  const num = v => (v !== null && v !== undefined ? v : '');
+
+  const buildRows = () => {
+    const rows = [
+      ['Metric', 'SY23-24', 'SY24-25', 'SY25-26'],
+      ['Enrollment', num(school.enroll[0]), num(school.enroll[1]), num(school.enroll[2])],
+      ['Avg Daily Attendance', pct(school.ada[0]), pct(school.ada[1]), pct(school.ada[2])],
+      ['Chronic Absenteeism', pct(school.ca[0]), pct(school.ca[1]), pct(school.ca[2])],
+      ['Overall On Track', pct(school.aot[0]), pct(school.aot[1]), pct(school.aot[2])],
+      ['Avg Sense of Belonging', pct(school.bel[0]), pct(school.bel[1]), pct(school.bel[2])],
+      ['School Safety', pct(school.saf[0]), pct(school.saf[1]), pct(school.saf[2])],
+      ['Multilingual Learners', pct(school.ml[0]), pct(school.ml[1]), pct(school.ml[2])],
+      ['Students w/ Disabilities', pct(school.swd[0]), pct(school.swd[1]), pct(school.swd[2])],
+      ['Economically Disadvantaged', pct(school.eco[0]), pct(school.eco[1]), pct(school.eco[2])],
+    ];
+    return rows;
+  };
+
+  const handleCopy = async () => {
+    const rows = buildRows();
+    const tsv = rows.map(r => r.join('\t')).join('\n');
+    try {
+      await navigator.clipboard.writeText(tsv);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  return (
+    <button onClick={handleCopy} style={{
+      background: copied ? 'rgba(29,158,117,0.15)' : 'rgba(255,255,255,0.05)',
+      color: copied ? '#5DCAA5' : '#8b8885',
+      border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 5,
+      padding: '3px 10px', fontSize: 10, cursor: 'pointer', textTransform: 'none', letterSpacing: 0,
+    }}>
+      {copied ? '✓ Copied' : 'Copy table'}
+    </button>
+  );
+}
+
 const styles = {
   sec: { fontSize: 11, fontWeight: 500, color: '#8b8885', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' },
   metCard: { background: '#1e2a3a', borderRadius: 8, padding: '12px 14px', textAlign: 'center' },
