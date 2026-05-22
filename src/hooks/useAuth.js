@@ -3,11 +3,21 @@ import { getUserRole } from '../utils/sheets';
 
 const AuthContext = createContext(null);
 
+export const GUEST_USER = {
+  email: 'guest@bchs.org',
+  name: 'Guest',
+  picture: null,
+  role: 'guest',
+  schoolId: 'mather',
+  schoolName: 'Mather Elementary',
+  accessToken: null,
+  isGuest: true,
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore session from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem('bchs_user');
     if (stored) {
@@ -17,17 +27,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   const loginWithGoogle = async (googleCredential) => {
-    // Decode the JWT from Google
     const payload = parseJwt(googleCredential.credential);
     const email = payload.email;
     const name = payload.name;
     const picture = payload.picture;
 
-    // Look up role in Google Sheet
     let roleData = await getUserRole(email);
 
-    // Dev fallback: if sheet not configured yet, grant system leader access
-    // REMOVE THIS in production once your Users sheet is set up
     if (!roleData && process.env.NODE_ENV === 'development') {
       roleData = { email, role: 'system_leader', schoolId: 'all', schoolName: 'All Schools' };
     }
@@ -37,19 +43,23 @@ export function AuthProvider({ children }) {
     }
 
     const userData = {
-      email,
-      name,
-      picture,
-      role: roleData.role,       // 'coordinator' | 'system_leader' | 'admin'
+      email, name, picture,
+      role: roleData.role,
       schoolId: roleData.schoolId,
       schoolName: roleData.schoolName,
       accessToken: googleCredential.access_token || null,
       credential: googleCredential.credential,
+      isGuest: false,
     };
 
     setUser(userData);
     localStorage.setItem('bchs_user', JSON.stringify(userData));
     return userData;
+  };
+
+  const loginAsGuest = () => {
+    setUser(GUEST_USER);
+    localStorage.setItem('bchs_user', JSON.stringify(GUEST_USER));
   };
 
   const logout = () => {
@@ -58,7 +68,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginAsGuest, logout }}>
       {children}
     </AuthContext.Provider>
   );

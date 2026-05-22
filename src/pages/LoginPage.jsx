@@ -3,7 +3,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../hooks/useAuth';
 
 export default function LoginPage() {
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, loginAsGuest } = useAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +25,6 @@ export default function LoginPage() {
       background: 'var(--surface)', padding: 20,
     }}>
       <div style={{ width: '100%', maxWidth: 420 }}>
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{
             width: 52, height: 52, borderRadius: 12, background: 'var(--navy)',
@@ -45,7 +44,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Login card */}
         <div style={{
           background: 'var(--card)', borderRadius: 'var(--radius-xl)',
           border: '0.5px solid var(--border)', padding: '28px 24px',
@@ -78,13 +76,34 @@ export default function LoginPage() {
             </div>
           )}
 
-          <div style={{ marginTop: 20, paddingTop: 16, borderTop: '0.5px solid var(--border)', fontSize: 11, color: 'var(--text-hint)', textAlign: 'center', lineHeight: 1.6 }}>
+          {/* Divider */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0 16px' }}>
+            <div style={{ flex: 1, height: '0.5px', background: 'var(--border)' }} />
+            <span style={{ fontSize: 11, color: 'var(--text-hint)' }}>or</span>
+            <div style={{ flex: 1, height: '0.5px', background: 'var(--border)' }} />
+          </div>
+
+          {/* Guest access */}
+          <button
+            onClick={loginAsGuest}
+            style={{
+              width: '100%', padding: '10px 16px', borderRadius: 'var(--radius-md)',
+              border: '0.5px solid var(--border-strong)', background: 'transparent',
+              fontSize: 13, color: 'var(--text-muted)', cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--surface)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            View as guest — read-only demo
+          </button>
+
+          <div style={{ marginTop: 16, fontSize: 11, color: 'var(--text-hint)', textAlign: 'center', lineHeight: 1.6 }}>
             Access is managed by your system administrator.<br />
             Contact the BCHS data team if you need access.
           </div>
         </div>
 
-        {/* Footer */}
         <div style={{ marginTop: 20, textAlign: 'center', fontSize: 11, color: 'var(--text-hint)' }}>
           YMCA of Greater Boston · Boston Community Hub Schools
         </div>
