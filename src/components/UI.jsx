@@ -114,7 +114,7 @@ export function Button({ children, onClick, variant = 'primary', small, disabled
     display: 'inline-flex', alignItems: 'center', gap: 6,
     padding: small ? '5px 12px' : '8px 16px',
     borderRadius: 'var(--radius-md)', fontSize: small ? 12 : 13, fontWeight: 500,
-    cursor: disabled ? 'not-allowed', opacity: disabled ? 0.5 : 1,
+    cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1,
     transition: 'background 0.15s', border: 'none',
   };
   const variants = {
