@@ -1,186 +1,206 @@
 import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
-import { Card, MetricCard, Delta } from '../components/UI';
-import { SYSTEM_DATA, SCHOOLS, YEARS } from '../data/schoolData';
+import { SYSTEM_DATA, SCHOOLS } from '../data/schoolData';
 
-function fmt(v, type = 'pct') {
-  if (v === null || v === undefined) return '—';
-  if (type === 'pct') return `${(v * 100).toFixed(1)}%`;
-  return v.toLocaleString();
+function fmt(v) { return v !== null && v !== undefined ? (v * 100).toFixed(1) + '%' : '—'; }
+function caColor(v) { if (!v) return '#8b8885'; return v < 0.20 ? '#1D9E75' : v < 0.30 ? '#BA7517' : '#E24B4A'; }
+function adaColor(v) { if (!v) return '#8b8885'; return v >= 0.93 ? '#1D9E75' : v >= 0.88 ? '#378ADD' : '#BA7517'; }
+function belColor(v) { if (!v) return '#8b8885'; return v >= 0.55 ? '#1D9E75' : v >= 0.45 ? '#378ADD' : '#BA7517'; }
+function aotColor(v) { if (!v) return '#8b8885'; return v >= 0.45 ? '#1D9E75' : v >= 0.30 ? '#378ADD' : '#E24B4A'; }
+
+function HBar({ name, value, maxPct, color, highlight }) {
+  const pct = value !== null ? Math.min((value / maxPct) * 100, 100) : 0;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+      <div style={{ width: 80, fontSize: 11, color: highlight ? '#E07B3A' : '#8b8885', textAlign: 'right', flexShrink: 0, fontWeight: highlight ? 600 : 400 }}>
+        {name}
+      </div>
+      <div style={{ flex: 1, background: 'rgba(255,255,255,0.07)', borderRadius: 3, height: 13 }}>
+        <div style={{ width: `${pct}%`, height: '100%', borderRadius: 3, background: value !== null ? color : 'transparent' }} />
+      </div>
+      <div style={{ width: 40, fontSize: 11, color: '#e2e0db', flexShrink: 0 }}>
+        {value !== null && value !== undefined ? fmt(value) : '—'}
+      </div>
+    </div>
+  );
 }
 
-function caColor(v) {
-  if (v === null) return 'var(--text-hint)';
-  if (v < 0.20) return '#1D9E75';
-  if (v < 0.30) return '#BA7517';
-  return '#A32D2D';
+function YoYCard({ title, data, colorFn, maxPct = 1, lowerBetter = false }) {
+  const years = ['SY23-24', 'SY24-25', 'SY25-26'];
+  return (
+    <div style={{ background: '#1e2a3a', borderRadius: 8, padding: '12px 14px' }}>
+      <div style={{ fontSize: 12, fontWeight: 500, color: '#e2e0db', marginBottom: 10 }}>{title}</div>
+      {years.map((yr, i) => {
+        const v = data[i];
+        const pct = v !== null ? Math.min((v / maxPct) * 100, 100) : 0;
+        const isLatest = i === 2;
+        const prev = data[i - 1];
+        const delta = v !== null && prev !== null && i > 0 ? v - prev : null;
+        const improved = delta !== null && (lowerBetter ? delta < 0 : delta > 0);
+        const color = isLatest ? (improved ? '#1D9E75' : v !== null && prev !== null ? '#E24B4A' : '#378ADD') : '#378ADD';
+        return (
+          <div key={yr} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+            <div style={{ width: 48, fontSize: 10, color: '#8b8885', flexShrink: 0 }}>{yr.replace('SY', '')}</div>
+            <div style={{ flex: 1, background: 'rgba(255,255,255,0.07)', borderRadius: 3, height: 13 }}>
+              <div style={{ width: `${pct}%`, height: '100%', borderRadius: 3, background: color }} />
+            </div>
+            <div style={{ width: 52, fontSize: 10, color: isLatest ? color : '#e2e0db', fontWeight: isLatest ? 500 : 400, flexShrink: 0, textAlign: 'right' }}>
+              {v !== null ? fmt(v) : '—'}{isLatest && delta !== null ? (improved ? ' ▲' : ' ▼') : ''}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 export default function SystemTab() {
   const [sortBy, setSortBy] = useState('ca');
-  const [highlightSchool, setHighlightSchool] = useState('mather');
 
   const schoolName = id => SCHOOLS.find(s => s.id === id)?.name || id;
   const schoolShort = id => SCHOOLS.find(s => s.id === id)?.short || id;
 
-  // System-wide summary calculations
-  const sy26 = SYSTEM_DATA.map(s => ({ ...s, name: schoolName(s.id), short: schoolShort(s.id) }));
-  const totalStudents = SYSTEM_DATA.reduce((sum, s) => sum + (s.enroll[2] || 0), 0);
+  const enriched = SYSTEM_DATA.map(s => ({ ...s, short: schoolShort(s.id), name: schoolName(s.id) }));
 
-  // Weighted averages for SY25-26
-  const wavg = (metric) => {
+  // Weighted system averages
+  const wavg = (metric, yr = 2) => {
     let num = 0, den = 0;
     SYSTEM_DATA.forEach(s => {
-      if (s[metric][2] !== null) { num += s[metric][2] * s.enroll[2]; den += s.enroll[2]; }
+      if (s[metric][yr] !== null) { num += s[metric][yr] * s.enroll[yr]; den += s.enroll[yr]; }
     });
     return den > 0 ? num / den : null;
   };
 
-  const systemMetrics = [
-    { label: 'Total Students', value: totalStudents.toLocaleString() },
-    { label: 'Hub Schools', value: '20' },
-    { label: 'Avg Daily Attendance', value: fmt(wavg('ada')), accent: 'teal', delta: '▲ Improving' },
-    { label: 'Chronic Absenteeism', value: fmt(wavg('ca')), accent: 'orange', delta: '▲ −4.1pp since SY23-24' },
-    { label: 'Sense of Belonging', value: fmt(wavg('bel')), accent: 'blue', delta: '▲ +4.5pp since SY23-24' },
-    { label: 'Academics On Track', value: fmt(wavg('aot')), accent: 'red', delta: '▼ −13pp since SY23-24' },
-  ];
+  const totalStudents = SYSTEM_DATA.reduce((sum, s) => sum + (s.enroll[2] || 0), 0);
 
-  // 3-year system trend
-  const trendData = YEARS.map((y, i) => {
-    const calcWavg = (metric) => {
-      let num = 0, den = 0;
-      SYSTEM_DATA.forEach(s => {
-        if (s[metric][i] !== null) { num += s[metric][i] * s.enroll[i]; den += s.enroll[i]; }
-      });
-      return den > 0 ? Math.round(num / den * 1000) / 10 : null;
-    };
-    return {
-      year: y,
-      'Attendance': calcWavg('ada'),
-      'Chronic Absent': calcWavg('ca'),
-      'Belonging': calcWavg('bel'),
-      'Academics': calcWavg('aot'),
-    };
-  });
-
-  // Sort schools
-  const sortedSchools = [...sy26].sort((a, b) => {
-    if (sortBy === 'ca') return (a.ca[2] ?? 1) - (b.ca[2] ?? 1);
-    if (sortBy === 'ada') return (b.ada[2] ?? 0) - (a.ada[2] ?? 0);
-    if (sortBy === 'bel') return (b.bel[2] ?? 0) - (a.bel[2] ?? 0);
-    if (sortBy === 'name') return a.name.localeCompare(b.name);
+  const sortedSchools = [...enriched].sort((a, b) => {
+    if (sortBy === 'ca')   return (a.ca[2] ?? 1) - (b.ca[2] ?? 1);
+    if (sortBy === 'ada')  return (b.ada[2] ?? 0) - (a.ada[2] ?? 0);
+    if (sortBy === 'bel')  return (b.bel[2] ?? 0) - (a.bel[2] ?? 0);
+    if (sortBy === 'aot')  return (b.aot[2] ?? 0) - (a.aot[2] ?? 0);
+    if (sortBy === 'name') return a.short.localeCompare(b.short);
     return 0;
   });
 
+  const qspMetrics = [
+    { id: 'ca',  title: 'Chronic Absenteeism', note: 'lower = better', colorFn: v => caColor(v), maxPct: 0.55, sortAsc: true },
+    { id: 'bel', title: 'Sense of Belonging',  note: 'higher = better', colorFn: v => belColor(v), maxPct: 0.80, sortAsc: false },
+    { id: 'ada', title: 'Avg Daily Attendance', note: 'higher = better', colorFn: v => adaColor(v), maxPct: 1.00, sortAsc: false },
+    { id: 'aot', title: 'Academics On Track',  note: 'higher = better', colorFn: v => aotColor(v), maxPct: 0.80, sortAsc: false },
+  ];
+
+  const card = (label, value, color) => (
+    <div style={{ background: '#1e2a3a', borderRadius: 8, padding: '14px 16px', textAlign: 'center' }}>
+      <div style={{ fontSize: 26, fontWeight: 500, color }}>{value}</div>
+      <div style={{ fontSize: 11, color: '#8b8885', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>{label}</div>
+    </div>
+  );
+
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 16, fontWeight: 500 }}>System Dashboard — Boston Community Hub Schools</div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>20 schools · SY23-24 through SY25-26 · System-wide roll-up</div>
+      <div style={{ marginBottom: 4 }}>
+        <div style={{ fontSize: 16, fontWeight: 500, color: '#e2e0db' }}>System Dashboard — Boston Community Hub Schools</div>
+        <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2 }}>20 schools · SY23-24 through SY25-26 · System-wide roll-up</div>
       </div>
 
-      {/* Impact banner */}
-      <div style={{ background: 'var(--navy)', borderRadius: 'var(--radius-lg)', padding: '14px 20px', display: 'flex', flexWrap: 'wrap', gap: 28, marginBottom: 14 }}>
-        {systemMetrics.slice(0, 4).map(m => (
-          <div key={m.label} style={{ color: 'white' }}>
-            <div style={{ fontSize: 22, fontWeight: 600, color: m.accent === 'orange' ? 'var(--orange-light)' : m.accent === 'teal' ? '#5DCAA5' : m.accent === 'red' ? '#F09595' : 'white' }}>
-              {m.value}
-            </div>
-            <div style={{ fontSize: 10, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{m.label}</div>
-          </div>
-        ))}
+      {/* Metric cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, margin: '16px 0' }}>
+        {card('Total Students', totalStudents.toLocaleString(), '#e2e0db')}
+        {card('Hub Schools', '20', '#e2e0db')}
+        {card('Avg Daily Attendance', fmt(wavg('ada')), '#5DCAA5')}
+        {card('Chronic Absenteeism', fmt(wavg('ca')), '#FAC775')}
       </div>
 
-      <div className="grid-2" style={{ marginBottom: 12 }}>
-        {/* System trend */}
-        <Card title="System-Wide Metrics — 3-Year Trend">
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={trendData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-              <XAxis dataKey="year" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={v => `${v}%`} />
-              <Tooltip formatter={(v) => v ? `${v}%` : '—'} />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Line type="monotone" dataKey="Attendance" stroke="#1D9E75" strokeWidth={2} dot={{ r: 2 }} />
-              <Line type="monotone" dataKey="Chronic Absent" stroke="#E24B4A" strokeWidth={2} dot={{ r: 2 }} />
-              <Line type="monotone" dataKey="Belonging" stroke="#185FA5" strokeWidth={2} dot={{ r: 2 }} />
-              <Line type="monotone" dataKey="Academics" stroke="#E07B3A" strokeWidth={2} strokeDasharray="4 2" dot={{ r: 2 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
+      {/* YoY section */}
+      <div style={{ fontSize: 11, fontWeight: 500, color: '#8b8885', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
+        System-wide metrics — year over year
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
+        <YoYCard title="Avg Daily Attendance"   data={[wavg('ada',0), wavg('ada',1), wavg('ada',2)]} maxPct={1.0}  lowerBetter={false} />
+        <YoYCard title="Chronic Absenteeism"    data={[wavg('ca',0),  wavg('ca',1),  wavg('ca',2)]}  maxPct={0.40} lowerBetter={true}  />
+        <YoYCard title="Sense of Belonging"     data={[wavg('bel',0), wavg('bel',1), wavg('bel',2)]} maxPct={0.80} lowerBetter={false} />
+        <YoYCard title="Academics On Track"     data={[wavg('aot',0), wavg('aot',1), wavg('aot',2)]} maxPct={0.60} lowerBetter={false} />
+      </div>
 
-        {/* CA bar chart */}
-        <Card title="Chronic Absenteeism by School — SY25-26 (sorted low to high)">
-          <div style={{ overflowY: 'auto', maxHeight: 220 }}>
-            {[...sy26].sort((a, b) => (a.ca[2] ?? 1) - (b.ca[2] ?? 1)).map(s => (
-              <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0', cursor: 'pointer' }}
-                onClick={() => setHighlightSchool(s.id)}>
-                <div style={{ width: 110, fontSize: 10, color: s.id === highlightSchool ? 'var(--orange)' : 'var(--text-muted)', textAlign: 'right', flexShrink: 0, fontWeight: s.id === highlightSchool ? 600 : 400 }}>
-                  {s.short}
-                </div>
-                <div style={{ flex: 1, background: 'var(--surface-2)', borderRadius: 3, height: 12 }}>
-                  <div style={{ width: `${s.ca[2] !== null ? s.ca[2] * 200 : 0}%`, maxWidth: '100%', height: '100%', borderRadius: 3, background: caColor(s.ca[2]) }} />
-                </div>
-                <div style={{ width: 38, fontSize: 10, color: caColor(s.ca[2]), fontWeight: 500, flexShrink: 0 }}>
-                  {fmt(s.ca[2])}
-                </div>
+      {/* QSP metrics per school */}
+      <div style={{ fontSize: 11, fontWeight: 500, color: '#8b8885', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
+        QSP metrics by school — SY25-26
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+        {qspMetrics.map(m => {
+          const sorted = [...enriched]
+            .filter(s => s[m.id][2] !== null)
+            .sort((a, b) => m.sortAsc ? a[m.id][2] - b[m.id][2] : b[m.id][2] - a[m.id][2]);
+          return (
+            <div key={m.id} style={{ background: '#1e2a3a', borderRadius: 8, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 500, color: '#e2e0db' }}>{m.title}</span>
+                <span style={{ fontSize: 10, color: '#8b8885' }}>{m.note}</span>
               </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 8, display: 'flex', gap: 12, fontSize: 10, color: 'var(--text-muted)' }}>
-            <span style={{ color: '#1D9E75' }}>● &lt;20% Good</span>
-            <span style={{ color: '#BA7517' }}>● 20-30% Watch</span>
-            <span style={{ color: '#A32D2D' }}>● &gt;30% Concern</span>
-          </div>
-        </Card>
+              {sorted.map(s => (
+                <HBar
+                  key={s.id}
+                  name={s.short}
+                  value={s[m.id][2]}
+                  maxPct={m.maxPct}
+                  color={m.colorFn(s[m.id][2])}
+                  highlight={s.id === 'mather'}
+                />
+              ))}
+              {m.id === 'ca' && (
+                <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 10 }}>
+                  <span style={{ color: '#1D9E75' }}>● &lt;20% Good</span>
+                  <span style={{ color: '#BA7517' }}>● 20–30% Watch</span>
+                  <span style={{ color: '#E24B4A' }}>● &gt;30% Concern</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
-      {/* School-by-school table */}
-      <Card title={
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span>All Schools Snapshot — SY25-26</span>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
-            {[['ca','Chr. Absent'],['ada','Attendance'],['bel','Belonging'],['name','Name']].map(([k, label]) => (
-              <button key={k} onClick={() => setSortBy(k)} style={{
-                padding: '3px 8px', fontSize: 11, borderRadius: 4, cursor: 'pointer', border: 'none',
-                background: sortBy === k ? 'var(--navy)' : 'var(--surface-2)',
-                color: sortBy === k ? 'white' : 'var(--text-muted)',
-              }}>
-                {label}
-              </button>
-            ))}
-          </div>
+      {/* Full table */}
+      <div style={{ fontSize: 11, fontWeight: 500, color: '#8b8885', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>
+        All schools snapshot
+      </div>
+      <div style={{ background: '#1e2a3a', borderRadius: 8, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', gap: 4, padding: '8px 12px', borderBottom: '0.5px solid rgba(255,255,255,0.07)', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: '#8b8885', marginRight: 6 }}>Sort by:</span>
+          {[['ca','Chr. Absent'],['ada','Attendance'],['bel','Belonging'],['aot','Academics'],['name','Name']].map(([k, label]) => (
+            <button key={k} onClick={() => setSortBy(k)} style={{
+              padding: '3px 9px', fontSize: 11, borderRadius: 4, cursor: 'pointer', border: 'none',
+              background: sortBy === k ? '#1a2744' : 'rgba(255,255,255,0.05)',
+              color: sortBy === k ? 'white' : '#8b8885',
+            }}>
+              {label}
+            </button>
+          ))}
         </div>
-      }>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
-              <tr style={{ borderBottom: '0.5px solid var(--border)' }}>
-                {['School', 'Enroll.', 'Avg Att.', 'Chr. Absent', 'Academics OT', 'Belonging', 'Safety', 'Econ. Disadv.'].map(h => (
-                  <th key={h} style={{ textAlign: 'left', padding: '5px 7px', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.03em', fontSize: 10 }}>{h}</th>
+              <tr style={{ borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
+                {['School','Enroll.','Avg Att.','Chr. Absent','Academics','Belonging','Safety','Econ. Disadv.'].map(h => (
+                  <th key={h} style={{ textAlign: 'left', padding: '7px 10px', color: '#8b8885', fontWeight: 500, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {sortedSchools.map(s => (
-                <tr key={s.id} style={{ borderBottom: '0.5px solid var(--border)', background: s.id === 'mather' ? 'rgba(224,123,58,0.05)' : 'transparent' }}
-                  onMouseEnter={e => e.currentTarget.style.background = s.id === 'mather' ? 'rgba(224,123,58,0.09)' : 'var(--surface)'}
-                  onMouseLeave={e => e.currentTarget.style.background = s.id === 'mather' ? 'rgba(224,123,58,0.05)' : 'transparent'}
-                >
-                  <td style={{ padding: '6px 7px', fontWeight: s.id === 'mather' ? 600 : 400, color: s.id === 'mather' ? 'var(--orange)' : 'var(--text)', whiteSpace: 'nowrap' }}>{s.short}</td>
-                  <td style={{ padding: '6px 7px' }}>{s.enroll[2]?.toLocaleString()}</td>
-                  <td style={{ padding: '6px 7px', color: s.ada[2] > 0.93 ? 'var(--teal)' : s.ada[2] < 0.85 ? 'var(--red)' : 'var(--text)' }}>{fmt(s.ada[2])}</td>
-                  <td style={{ padding: '6px 7px', color: caColor(s.ca[2]), fontWeight: 500 }}>{fmt(s.ca[2])}</td>
-                  <td style={{ padding: '6px 7px', color: s.aot[2] > 0.5 ? 'var(--teal)' : s.aot[2] < 0.25 ? 'var(--red)' : 'var(--text)' }}>{fmt(s.aot[2])}</td>
-                  <td style={{ padding: '6px 7px' }}>{fmt(s.bel[2])}</td>
-                  <td style={{ padding: '6px 7px' }}>{fmt(s.saf[2])}</td>
-                  <td style={{ padding: '6px 7px' }}>{fmt(s.eco[2])}</td>
+                <tr key={s.id} style={{ borderBottom: '0.5px solid rgba(255,255,255,0.05)', background: s.id === 'mather' ? 'rgba(224,123,58,0.05)' : 'transparent' }}>
+                  <td style={{ padding: '7px 10px', fontWeight: s.id === 'mather' ? 600 : 400, color: s.id === 'mather' ? '#E07B3A' : '#e2e0db' }}>{s.short}</td>
+                  <td style={{ padding: '7px 10px', color: '#e2e0db' }}>{s.enroll[2]?.toLocaleString()}</td>
+                  <td style={{ padding: '7px 10px', color: adaColor(s.ada[2]) }}>{fmt(s.ada[2])}</td>
+                  <td style={{ padding: '7px 10px', color: caColor(s.ca[2]), fontWeight: 500 }}>{fmt(s.ca[2])}</td>
+                  <td style={{ padding: '7px 10px', color: aotColor(s.aot[2]) }}>{fmt(s.aot[2])}</td>
+                  <td style={{ padding: '7px 10px', color: belColor(s.bel[2]) }}>{fmt(s.bel[2])}</td>
+                  <td style={{ padding: '7px 10px', color: '#e2e0db' }}>{fmt(s.saf[2])}</td>
+                  <td style={{ padding: '7px 10px', color: '#e2e0db' }}>{fmt(s.eco[2])}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
