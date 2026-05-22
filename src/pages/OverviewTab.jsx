@@ -76,6 +76,21 @@ export default function OverviewTab({ schoolId }) {
   const [ov, setOv] = useState(base);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const fresh = SCHOOL_OVERVIEWS[schoolId] || MATHER_DATA.overview;
+    setOv(fresh);
+    setLoading(true);
+    async function load() {
+      try {
+        const rows = await readSheet('SchoolProfiles!A:C');
+        const match = rows.find(r => r[0] === schoolId);
+        if (match?.[1]) setOv({ ...fresh, ...JSON.parse(match[1]) });
+      } catch {}
+      setLoading(false);
+    }
+    load();
+  }, [schoolId]);
+
   const [editInfo,    setEditInfo]    = useState(false);
   const [editTeam,    setEditTeam]    = useState(false);
   const [editLeaders, setEditLeaders] = useState(false);
@@ -88,18 +103,6 @@ export default function OverviewTab({ schoolId }) {
 
   const [saving, setSaving] = useState('');
   const [saved,  setSaved]  = useState('');
-
-  useEffect(() => {
-    async function load() {
-      try {
-        const rows = await readSheet('SchoolProfiles!A:C');
-        const match = rows.find(r => r[0] === schoolId);
-        if (match?.[1]) setOv({ ...base, ...JSON.parse(match[1]) });
-      } catch {}
-      setLoading(false);
-    }
-    load();
-  }, [schoolId]);
 
   async function persist(key, patch) {
     setSaving(key);

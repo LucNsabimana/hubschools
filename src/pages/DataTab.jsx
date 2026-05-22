@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { MATHER_DATA, SYSTEM_DATA, SCHOOLS } from '../data/schoolData';
 
 function f(v) { return v !== null && v !== undefined ? `${(v * 100).toFixed(1)}%` : '—'; }
@@ -151,7 +151,10 @@ export default function DataTab({ schoolId }) {
       </div>
 
       {/* Full metrics table */}
-      <div style={{ fontSize: 11, fontWeight: 500, color: '#8b8885', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Full metrics table</div>
+      <div style={{ fontSize: 11, fontWeight: 500, color: '#8b8885', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span>Full metrics table</span>
+        <CopyTableButton schoolName={schoolInfo?.name} school={school} isMather={isMather} m={m} />
+      </div>
       <div style={{ background: '#1e2a3a', borderRadius: 8, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
