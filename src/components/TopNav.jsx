@@ -12,11 +12,10 @@ const TABS = [
   { id: 'system',     label: 'System View',       icon: '⊞', systemOnly: true },
 ];
 
-export default function TopNav({ activeTab, onTabChange, selectedSchool, onSchoolChange, fontSize, setFontSize }) {
+export default function TopNav({ activeTab, onTabChange, selectedSchool, onSchoolChange, fontSize, onIncrease, onDecrease }) {
   const { user, logout } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const isSystemLeader = user?.role === 'system_leader' || user?.role === 'admin' || user?.role === 'guest';
-
   const visibleTabs = TABS.filter(t => !t.systemOnly || isSystemLeader);
 
   return (
@@ -35,8 +34,7 @@ export default function TopNav({ activeTab, onTabChange, selectedSchool, onSchoo
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Font size control */}
-          <FontSizeControl size={fontSize} setSize={setFontSize} />
+          <FontSizeControl size={fontSize} increase={onIncrease} decrease={onDecrease} />
 
           {isSystemLeader && (
             <select
@@ -100,7 +98,7 @@ export default function TopNav({ activeTab, onTabChange, selectedSchool, onSchoo
         </div>
       </div>
 
-      <div style={{ background: 'var(--navy-light)', display: 'flex', gap: 0, padding: '0 16px', overflowX: 'auto', position: 'sticky', top: 50, zIndex: 99 }}>
+      <div style={{ background: 'var(--navy-light)', display: 'flex', padding: '0 16px', overflowX: 'auto', position: 'sticky', top: 50, zIndex: 99 }}>
         {visibleTabs.map(tab => (
           <button key={tab.id} onClick={() => onTabChange(tab.id)} style={{
             padding: '9px 13px', fontSize: 11, whiteSpace: 'nowrap',

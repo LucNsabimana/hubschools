@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-const SIZES = [
-  { label: 'A-', value: 11, title: 'Small' },
-  { label: 'A',  value: 13, title: 'Medium (default)' },
-  { label: 'A+', value: 15, title: 'Large' },
-];
-
 export function useFontSize() {
   const [size, setSize] = useState(() => {
     const saved = localStorage.getItem('bchs_font_size');
@@ -14,35 +8,43 @@ export function useFontSize() {
 
   useEffect(() => {
     document.documentElement.style.setProperty('--base-font-size', `${size}px`);
-    localStorage.setItem('bchs_font_size', size);
+    localStorage.setItem('bchs_font_size', String(size));
   }, [size]);
 
-  return { size, setSize };
+  const increase = () => setSize(s => Math.min(s + 2, 19));
+  const decrease = () => setSize(s => Math.max(s - 2, 11));
+
+  return { size, increase, decrease };
 }
 
-export function FontSizeControl({ size, setSize }) {
+export function FontSizeControl({ size, increase, decrease }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-      {SIZES.map(s => (
-        <button
-          key={s.value}
-          title={s.title}
-          onClick={() => setSize(s.value)}
-          style={{
-            width: 26, height: 26, borderRadius: 5,
-            border: '0.5px solid',
-            borderColor: size === s.value ? 'var(--orange)' : 'rgba(255,255,255,0.15)',
-            background: size === s.value ? 'rgba(224,123,58,0.2)' : 'rgba(255,255,255,0.05)',
-            color: size === s.value ? 'var(--orange)' : 'rgba(255,255,255,0.5)',
-            fontSize: s.label === 'A-' ? 10 : s.label === 'A+' ? 14 : 12,
-            fontWeight: 500, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'all 0.15s',
-          }}
-        >
-          {s.label}
-        </button>
-      ))}
+    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+      <button
+        onClick={decrease}
+        disabled={size <= 11}
+        title="Decrease text size"
+        style={{
+          width: 24, height: 24, borderRadius: 5, cursor: size <= 11 ? 'not-allowed' : 'pointer',
+          border: '0.5px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)',
+          color: size <= 11 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)',
+          fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >−</button>
+      <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', minWidth: 30, textAlign: 'center' }}>
+        Text
+      </span>
+      <button
+        onClick={increase}
+        disabled={size >= 19}
+        title="Increase text size"
+        style={{
+          width: 24, height: 24, borderRadius: 5, cursor: size >= 19 ? 'not-allowed' : 'pointer',
+          border: '0.5px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)',
+          color: size >= 19 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.6)',
+          fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}
+      >+</button>
     </div>
   );
 }

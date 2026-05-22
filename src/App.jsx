@@ -14,7 +14,7 @@ function Dashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedSchool, setSelectedSchool] = useState(user?.schoolId || 'mather');
-  const { size: fontSize, setSize: setFontSize } = useFontSize();
+  const { size, increase, decrease } = useFontSize();
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -27,14 +27,15 @@ function Dashboard() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontSize: `var(--base-font-size, 13px)` }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <TopNav
         activeTab={activeTab}
         onTabChange={handleTabChange}
         selectedSchool={selectedSchool}
         onSchoolChange={handleSchoolChange}
-        fontSize={fontSize}
-        setFontSize={setFontSize}
+        fontSize={size}
+        onIncrease={increase}
+        onDecrease={decrease}
       />
       <div style={{ flex: 1, background: 'var(--surface)', padding: '16px', overflowY: 'auto' }}>
         {activeTab === 'overview'   && <OverviewTab schoolId={selectedSchool} />}
