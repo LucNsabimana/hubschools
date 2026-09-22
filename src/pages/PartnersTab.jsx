@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, StatusPill, MetricCard, Button, Field } from '../components/UI';
-import { MATHER_DATA, SCHOOL_PARTNERS, SCHOOLS } from '../data/schoolData';
+import { useData } from '../data/DataContext';
 import { useAuth } from '../hooks/useAuth';
 
 const STATUSES   = ['Active', 'Potential', 'Inactive'];
@@ -64,9 +64,11 @@ const EMPTY_PARTNER = { name: '', type: 'School-Based Partnership', focus: '', p
 
 export default function PartnersTab({ schoolId }) {
   const { user } = useAuth();
+  const { SCHOOL_PARTNERS, SCHOOLS, ROI_DATA, YEARS, settings } = useData();
   const canEdit   = user?.role === 'system_leader' || user?.role === 'admin';
   const schoolName = SCHOOLS.find(s => s.id === schoolId)?.name || schoolId;
-  const isMather  = schoolId === 'mather';
+  const roi       = ROI_DATA[schoolId] || null;
+  const isMather  = !!roi;
 
   const [partners, setPartners] = useState(SCHOOL_PARTNERS[schoolId] || []);
   const [filter,   setFilter]   = useState('all');
@@ -85,8 +87,8 @@ export default function PartnersTab({ schoolId }) {
   const active    = partners.filter(p => p.mid === 'Active').length;
   const inactive  = partners.filter(p => p.mid === 'Inactive').length;
   const potential = partners.filter(p => p.mid === 'Potential').length;
-  const inkind    = isMather ? MATHER_DATA.roi.inkind.reduce((s, r) => s + r.value, 0) : 0;
-  const grants    = isMather ? MATHER_DATA.roi.grants.reduce((s, r) => s + (r.awarded || 0), 0) : 0;
+  const inkind    = isMather ? roi.inkind.reduce((s, r) => s + r.value, 0) : 0;
+  const grants    = isMather ? roi.grants.reduce((s, r) => s + (r.awarded || 0), 0) : 0;
 
   const filtered = partners.filter(p => {
     if (filter === 'active')    return p.mid === 'Active';
@@ -102,7 +104,7 @@ export default function PartnersTab({ schoolId }) {
           <div style={{ fontSize: 16, fontWeight: 500, color: '#e2e0db' }}>Partner Quality — {schoolName}</div>
           <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2 }}>
             Community and school-based partnerships · Mid-year status and progress tracking
-            {' '}<span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of May 1, 2026</span>
+            {' '}<span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of {settings.DataAsOf || '—'}</span>
           </div>
         </div>
         {canEdit && <button onClick={() => setShowAdd(true)} style={{ background: '#E07B3A', color: 'white', border: 'none', borderRadius: 6, padding: '6px 14px', fontSize: 12, fontWeight: 500, cursor: 'pointer', flexShrink: 0 }}>+ Add Partner</button>}
@@ -173,14 +175,14 @@ export default function PartnersTab({ schoolId }) {
       {/* Mather ROI */}
       {isMather && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-          <Card title="In-Kind Donations (SY25-26)">
+          <Card title={`In-Kind Donations (${YEARS[2]})`}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead><tr style={{ borderBottom: '0.5px solid var(--border)' }}>
                 <th style={{ textAlign: 'left', padding: '5px 0', color: 'var(--text-muted)', fontSize: 10, fontWeight: 500, textTransform: 'uppercase' }}>Donor</th>
                 <th style={{ textAlign: 'right', padding: '5px 0', color: 'var(--text-muted)', fontSize: 10, fontWeight: 500, textTransform: 'uppercase' }}>Est. Value</th>
               </tr></thead>
               <tbody>
-                {MATHER_DATA.roi.inkind.map((r, i) => (
+                {roi.inkind.map((r, i) => (
                   <tr key={i} style={{ borderBottom: '0.5px solid var(--border)' }}>
                     <td style={{ padding: '5px 0' }}><div style={{ fontWeight: 500 }}>{r.donor}</div><div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{r.purpose}</div></td>
                     <td style={{ padding: '5px 0', textAlign: 'right', fontWeight: 500 }}>${r.value.toLocaleString()}</td>
@@ -190,8 +192,8 @@ export default function PartnersTab({ schoolId }) {
               </tbody>
             </table>
           </Card>
-          <Card title="Grants (SY25-26)">
-            {MATHER_DATA.roi.grants.map((g, i) => (
+          <Card title={`Grants (${YEARS[2]})`}>
+            {roi.grants.map((g, i) => (
               <div key={i} style={{ padding: '8px 0', borderBottom: '0.5px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
                   <span style={{ fontWeight: 500 }}>{g.name}</span>

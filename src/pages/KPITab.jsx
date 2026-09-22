@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, StatusPill, Button, Field, ProgressRing } from '../components/UI';
-import { SCHOOL_KPIS, SCHOOLS } from '../data/schoolData';
+import { useData } from '../data/DataContext';
 import { useAuth } from '../hooks/useAuth';
 
 const STATUS_OPTIONS = ['Not Started', 'In Progress', 'Done', 'Planning'];
@@ -78,12 +78,11 @@ function KPIRow({ kpi, onUpdate, onDelete, canEdit }) {
 
 export default function KPITab({ schoolId }) {
   const { user } = useAuth();
+  const { SCHOOL_KPIS, SCHOOLS, settings } = useData();
   const canEdit    = user?.role === 'system_leader' || user?.role === 'admin';
   const schoolName = SCHOOLS.find(s => s.id === schoolId)?.name || schoolId;
 
-  // Use winthrop data for clap_winthrop key
-  const kpiKey = schoolId === 'winthrop' ? 'clap_winthrop' : schoolId;
-  const base   = SCHOOL_KPIS[kpiKey] || [];
+  const base   = SCHOOL_KPIS[schoolId] || [];
   const [kpis, setKpis] = useState(base);
 
   const onUpdate = (updated) => setKpis(prev => prev.map(k => k.id === updated.id ? updated : k));
@@ -114,7 +113,7 @@ export default function KPITab({ schoolId }) {
           <div style={{ fontSize: 16, fontWeight: 500, color: '#e2e0db' }}>KPI Tracker — {schoolName}</div>
           <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2 }}>
             Intervention tracking · Progress updates · Endline results
-            {' '}<span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of May 1, 2026</span>
+            {' '}<span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of {settings.DataAsOf || '—'}</span>
           </div>
         </div>
         {canEdit && (
