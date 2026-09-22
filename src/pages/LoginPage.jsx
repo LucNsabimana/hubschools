@@ -3,8 +3,8 @@ import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../hooks/useAuth';
 
 export default function LoginPage() {
-  const { loginWithGoogle, loginAsGuest } = useAuth();
-  const [error, setError] = useState('');
+  const { loginWithGoogle, notice } = useAuth();
+  const [error, setError] = useState(notice || '');
   const [loading, setLoading] = useState(false);
 
   const handleSuccess = async (credentialResponse) => {
@@ -60,6 +60,7 @@ export default function LoginPage() {
                 onSuccess={handleSuccess}
                 onError={() => setError('Google sign-in failed. Please try again.')}
                 useOneTap
+                auto_select
                 text="signin_with"
                 shape="rectangular"
                 size="large"
@@ -77,26 +78,6 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0 14px' }}>
-            <div style={{ flex: 1, height: '0.5px', background: 'var(--border)' }} />
-            <span style={{ fontSize: 10, color: 'var(--text-hint)' }}>or</span>
-            <div style={{ flex: 1, height: '0.5px', background: 'var(--border)' }} />
-          </div>
-
-          <button
-            onClick={loginAsGuest}
-            style={{
-              width: '100%', padding: '9px 14px', borderRadius: 'var(--radius-md)',
-              border: '0.5px solid var(--border-strong)', background: 'rgba(255,255,255,0.03)',
-              fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer',
-              transition: 'background 0.15s, color 0.15s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'var(--text)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.color = 'var(--text-muted)'; }}
-          >
-            View as guest — read-only demo
-          </button>
 
           <div style={{ marginTop: 14, fontSize: 10, color: 'var(--text-hint)', textAlign: 'center', lineHeight: 1.6 }}>
             Access is managed by your system administrator.<br />

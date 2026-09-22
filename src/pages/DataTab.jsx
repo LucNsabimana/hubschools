@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MATHER_DATA, SYSTEM_DATA, SCHOOLS } from '../data/schoolData';
+import { useData } from '../data/DataContext';
 
 function f(v) { return v !== null && v !== undefined ? `${(v * 100).toFixed(1)}%` : '—'; }
 function fraw(v) { return v !== null && v !== undefined ? v.toLocaleString() : '—'; }
@@ -89,13 +89,14 @@ function TRow({ label, sy23, sy24, sy25, lowerBetter, isRaw, isHeader }) {
 }
 
 function CopyTableButton({ schoolName, school, isMather, m }) {
+  const { YEARS } = useData();
   const [copied, setCopied] = useState(false);
   const pct = v => (v !== null && v !== undefined ? `${(v * 100).toFixed(1)}%` : '');
   const num = v => (v !== null && v !== undefined ? v : '');
 
   const buildRows = () => {
     const rows = [
-      ['Metric', 'SY23-24', 'SY24-25', 'SY25-26'],
+      ['Metric', ...YEARS],
       ['Enrollment', num(school.enroll[0]), num(school.enroll[1]), num(school.enroll[2])],
       ['Avg Daily Attendance', pct(school.ada[0]), pct(school.ada[1]), pct(school.ada[2])],
       ['Chronic Absenteeism', pct(school.ca[0]), pct(school.ca[1]), pct(school.ca[2])],
@@ -154,20 +155,21 @@ const styles = {
 };
 
 export default function DataTab({ schoolId }) {
-  const school = SYSTEM_DATA.find(s => s.id === schoolId) || SYSTEM_DATA.find(s => s.id === 'mather');
-  const schoolInfo = SCHOOLS.find(s => s.id === schoolId) || SCHOOLS.find(s => s.id === 'mather');
-  const isMather = schoolId === 'mather';
-  const m = isMather ? MATHER_DATA.data : null;
+  const { SYSTEM_DATA, SCHOOLS, DETAIL_DATA, YEARS, settings } = useData();
+  const school = SYSTEM_DATA.find(s => s.id === schoolId) || SYSTEM_DATA[0];
+  const schoolInfo = SCHOOLS.find(s => s.id === schoolId) || SCHOOLS[0];
+  const m = DETAIL_DATA[school?.id] || null;
+  const isMather = !!m;
 
   return (
     <div>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 16, fontWeight: 500, color: '#e2e0db' }}>Data Review — {schoolInfo?.name}</div>
-        <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2 }}>SY23-24 through SY25-26 · Source: Panorama / Lighthouse · <span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of May 1, 2026</span></div>
+        <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2 }}>{YEARS[0]} through {YEARS[2]} · Source: Panorama / Lighthouse · <span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of {settings.DataAsOf || '—'}</span></div>
       </div>
 
       {/* Metric cards */}
-      <div style={{ fontSize: 11, fontWeight: 500, color: '#8b8885', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Key metrics — SY25-26</div>
+      <div style={{ fontSize: 11, fontWeight: 500, color: '#8b8885', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Key metrics — {YEARS[2]}</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 10, marginBottom: 20 }}>
         <MetCard label="Enrollment" value={fraw(school.enroll[2])}
           color="#e2e0db"
@@ -204,7 +206,7 @@ export default function DataTab({ schoolId }) {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
-              {['Metric', 'SY23-24', 'SY24-25', 'SY25-26', 'Change'].map((h, i) => (
+              {['Metric', ...YEARS, 'Change'].map((h, i) => (
                 <th key={h} style={{ padding: '7px 10px', textAlign: i === 0 ? 'left' : 'right', color: '#8b8885', fontWeight: 500, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{h}</th>
               ))}
             </tr>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './hooks/useAuth';
+import { DataProvider } from './data/DataContext';
 import LoginPage from './pages/LoginPage';
 import TopNav from './components/TopNav';
 import HomePage from './pages/HomePage';
@@ -49,7 +50,7 @@ function Dashboard() {
 function AppContent() {
   const { user, loading } = useAuth();
   if (loading) return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8b8885', fontSize: 13 }}>Loading…</div>;
-  return user ? <Dashboard /> : <LoginPage />;
+  return user ? <DataProvider><Dashboard /></DataProvider> : <LoginPage />;
 }
 
 export default function App() {

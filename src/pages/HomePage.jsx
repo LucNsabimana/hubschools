@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useData } from '../data/DataContext';
 
 const Badge = ({ n }) => (
   <div style={{
@@ -12,10 +13,12 @@ const Badge = ({ n }) => (
 
 export default function HomePage({ onNavigate }) {
   const { user } = useAuth();
-  const isSystem = user?.role === 'system_leader' || user?.role === 'admin' || user?.role === 'guest';
+  const { SCHOOLS, YEARS } = useData();
+  const n = SCHOOLS.length;
+  const isSystem = user?.role === 'system_leader' || user?.role === 'admin';
 
   const navCards = [
-    isSystem && { n: 1, id: 'system',   title: 'System View',      desc: 'System-wide dashboard across all 20 schools with 3-year trends and QSP metrics.' },
+    isSystem && { n: 1, id: 'system',   title: 'System View',      desc: `System-wide dashboard across all ${n} schools with 3-year trends and QSP metrics.` },
                  { n: isSystem ? 2 : 1, id: 'overview',  title: 'School Overview',  desc: 'AOA team, QSP goals, leadership teams, and school profile.' },
                  { n: isSystem ? 3 : 2, id: 'kpi',       title: 'KPI Tracker',      desc: 'Track intervention progress, completion rates, and endline results.' },
   ].filter(Boolean);
@@ -23,7 +26,7 @@ export default function HomePage({ onNavigate }) {
   const features = [
     { n: 1, title: 'Assets & Opportunity Assessment', desc: 'Track each school\'s AOA across all six sections — data review, partner quality, self-assessment, priorities, and KPIs.' },
     { n: 2, title: 'Key Practice Indicators',         desc: 'Monitor intervention implementation and completion rates. Coordinators update progress directly in the platform.' },
-    { n: 3, title: 'System-wide View',                desc: 'Compare all 20 Hub Schools on the four core QSP metrics — attendance, chronic absenteeism, belonging, and academics.' },
+    { n: 3, title: 'System-wide View',                desc: `Compare all Hub Schools on the four core QSP metrics — attendance, chronic absenteeism, belonging, and academics.` },
     { n: 4, title: 'Real data, one place',            desc: 'Built directly from coordinator-submitted AOA workbooks. Powered by Google Sheets so data stays in tools teams already use.' },
   ];
 
@@ -49,7 +52,7 @@ export default function HomePage({ onNavigate }) {
         <div style={{ fontSize: 12, color: '#8b8885', marginBottom: 3 }}>Welcome back</div>
         <div style={{ fontSize: 18, fontWeight: 500, color: '#e2e0db' }}>{user?.name}</div>
         <div style={{ fontSize: 13, color: '#8b8885', marginTop: 3 }}>
-          {user?.role === 'system_leader' ? 'System Leader — access to all 20 Hub Schools' :
+          {user?.role === 'system_leader' ? `System Leader — access to all ${n} Hub Schools` :
            user?.role === 'guest' ? 'Guest — read-only access' :
            `Coordinator — ${user?.schoolName}`}
         </div>
@@ -94,7 +97,7 @@ export default function HomePage({ onNavigate }) {
       </div>
 
       <div style={{ textAlign: 'center', fontSize: 11, color: '#555350', marginTop: 8 }}>
-        YMCA of Greater Boston · Boston Community Hub Schools · SY25-26
+        YMCA of Greater Boston · Boston Community Hub Schools · {YEARS[YEARS.length - 1]}
       </div>
     </div>
   );

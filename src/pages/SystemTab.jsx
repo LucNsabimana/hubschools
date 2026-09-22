@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SYSTEM_DATA, SCHOOLS } from '../data/schoolData';
+import { useData } from '../data/DataContext';
 
 function fmt(v) { return v !== null && v !== undefined ? (v * 100).toFixed(1) + '%' : '—'; }
 function caColor(v)  { if (!v) return '#8b8885'; return v < 0.20 ? '#1D9E75' : v < 0.30 ? '#BA7517' : '#E24B4A'; }
@@ -38,7 +38,7 @@ function HBar({ name, v0, v2, maxPct, colorFn, lowerBetter, highlight }) {
 }
 
 function YoYCard({ title, data, lowerBetter, maxPct = 1 }) {
-  const years = ['SY23-24', 'SY24-25', 'SY25-26'];
+  const { YEARS: years } = useData();
   return (
     <div style={{ background: '#1e2a3a', borderRadius: 8, padding: '12px 14px' }}>
       <div style={{ fontSize: 12, fontWeight: 500, color: '#e2e0db', marginBottom: 10 }}>{title}</div>
@@ -66,6 +66,7 @@ function YoYCard({ title, data, lowerBetter, maxPct = 1 }) {
 }
 
 export default function SystemTab() {
+  const { SYSTEM_DATA, SCHOOLS, YEARS, settings } = useData();
   const [sortBy, setSortBy] = useState('ca');
 
   const schoolShort = id => SCHOOLS.find(s => s.id === id)?.short || id;
@@ -103,7 +104,7 @@ export default function SystemTab() {
     <div>
       <div style={{ marginBottom: 4 }}>
         <div style={{ fontSize: 16, fontWeight: 500, color: '#e2e0db' }}>System Dashboard — BCHS Pulse</div>
-        <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2, display: 'flex', alignItems: 'center', gap: 8 }}>20 schools · SY23-24 through SY25-26 · System-wide roll-up <span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of May 1, 2026</span></div>
+        <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2, display: 'flex', alignItems: 'center', gap: 8 }}>{SCHOOLS.length} schools · {YEARS[0]} through {YEARS[YEARS.length - 1]} · System-wide roll-up <span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of {settings.DataAsOf || '—'}</span></div>
       </div>
 
       {/* Metric cards */}
@@ -131,7 +132,7 @@ export default function SystemTab() {
       </div>
 
       {/* QSP metrics with delta */}
-      {sectionLabel('QSP metrics by school — SY25-26 with change since SY23-24')}
+      {sectionLabel(`QSP metrics by school — ${YEARS[2]} with change since ${YEARS[0]}`)}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
         {qspMetrics.map(m => {
           const sorted = [...enriched]

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { SCHOOLS } from '../data/schoolData';
+import { useData } from '../data/DataContext';
 
 const TABS = [
   { id: 'home',       label: 'Home',             icon: '⌂' },
@@ -14,8 +14,9 @@ const TABS = [
 
 export default function TopNav({ activeTab, onTabChange, selectedSchool, onSchoolChange }) {
   const { user, logout } = useAuth();
+  const { SCHOOLS } = useData();
   const [showMenu, setShowMenu] = useState(false);
-  const isSystemLeader = user?.role === 'system_leader' || user?.role === 'admin' || user?.role === 'guest';
+  const isSystemLeader = user?.role === 'system_leader' || user?.role === 'admin';
   const visibleTabs = TABS.filter(t => !t.systemOnly || isSystemLeader);
   const isSystemView = activeTab === 'system';
 

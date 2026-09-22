@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, MaturityBadge, Button, Field } from '../components/UI';
-import { SCHOOL_SELF_ASSESSMENTS, SCHOOLS } from '../data/schoolData';
+import { useData } from '../data/DataContext';
 import { useAuth } from '../hooks/useAuth';
 
 const RATINGS = ['Emerging', 'Maturing', 'Transforming'];
@@ -43,6 +43,7 @@ function AssessRow({ item, onUpdate, canEdit }) {
 
 export default function SelfAssessTab({ schoolId }) {
   const { user } = useAuth();
+  const { SCHOOL_SELF_ASSESSMENTS, SCHOOLS, settings } = useData();
   const canEdit = user?.role === 'system_leader' || user?.role === 'admin';
   const schoolName = SCHOOLS.find(s => s.id === schoolId)?.name || schoolId;
   const baseData = SCHOOL_SELF_ASSESSMENTS[schoolId];
@@ -89,7 +90,7 @@ export default function SelfAssessTab({ schoolId }) {
         <div style={{ fontSize: 16, fontWeight: 500, color: '#e2e0db' }}>Hub School Self-Assessment — {schoolName}</div>
         <div style={{ fontSize: 12, color: '#8b8885', marginTop: 2 }}>
           Strategy Implementation Rubric: Emerging → Maturing → Transforming
-          {' '}<span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of May 1, 2026</span>
+          {' '}<span style={{ color: '#FAC775', background: 'rgba(186,117,23,0.12)', padding: '1px 6px', borderRadius: 3, fontSize: 11 }}>Data as of {settings.DataAsOf || '—'}</span>
         </div>
       </div>
 

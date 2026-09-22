@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { MATHER_DATA, SCHOOL_OVERVIEWS, SYSTEM_DATA } from '../data/schoolData';
-import { readSheet, writeSheet, appendSheet } from '../utils/sheets';
+import { useData } from '../data/DataContext';
+import { saveOverview, AuthError } from '../utils/api';
 import { useAuth } from '../hooks/useAuth';
 
 function Avatar({ name, role, size = 44 }) {
@@ -67,29 +67,20 @@ function SecHeader({ label, isEditor, editing, saving, saved, onEdit, onSave, on
 }
 
 export default function OverviewTab({ schoolId }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const { SCHOOL_OVERVIEWS, SYSTEM_DATA, SCHOOLS, YEARS } = useData();
   const isEditor = user?.role === 'system_leader' || user?.role === 'admin';
-  const base = SCHOOL_OVERVIEWS[schoolId] || MATHER_DATA.overview;
-  const sys = SYSTEM_DATA.find(s => s.id === schoolId);
+  const resolvedId = SCHOOL_OVERVIEWS[schoolId] ? schoolId : (SCHOOL_OVERVIEWS.mather ? 'mather' : SCHOOLS[0]?.id);
+  const base = SCHOOL_OVERVIEWS[resolvedId] || { name: '', types: [], aoa_team: [] };
+  const sys = SYSTEM_DATA.find(s => s.id === resolvedId);
   const enrollment = sys ? sys.enroll[2] : null;
 
   const [ov, setOv] = useState(base);
-  const [loading, setLoading] = useState(true);
+  const loading = false;
 
   useEffect(() => {
-    const fresh = SCHOOL_OVERVIEWS[schoolId] || MATHER_DATA.overview;
-    setOv(fresh);
-    setLoading(true);
-    async function load() {
-      try {
-        const rows = await readSheet('SchoolProfiles!A:C');
-        const match = rows.find(r => r[0] === schoolId);
-        if (match?.[1]) setOv({ ...fresh, ...JSON.parse(match[1]) });
-      } catch {}
-      setLoading(false);
-    }
-    load();
-  }, [schoolId]);
+    setOv(SCHOOL_OVERVIEWS[resolvedId] || { name: '', types: [], aoa_team: [] });
+  }, [resolvedId, SCHOOL_OVERVIEWS]);
 
   const [editInfo,    setEditInfo]    = useState(false);
   const [editTeam,    setEditTeam]    = useState(false);
@@ -106,25 +97,21 @@ export default function OverviewTab({ schoolId }) {
 
   async function persist(key, patch) {
     setSaving(key);
+    const previous = ov;
     const updated = { ...ov, ...patch };
     setOv(updated);
     try {
-      const payload = JSON.stringify({
+      await saveOverview(user.credential, resolvedId, {
         name: updated.name, grades: updated.grades, address: updated.address,
         leadPartner: updated.leadPartner, coordinator: updated.coordinator,
         schoolLeader: updated.schoolLeader, types: updated.types,
         aoa_team: updated.aoa_team, teams: updated.teams, qspGoals: updated.qspGoals,
       });
-      const rows = await readSheet('SchoolProfiles!A:C');
-      const idx = rows.findIndex(r => r[0] === schoolId);
-      if (idx >= 0) {
-        await writeSheet(`SchoolProfiles!A${idx+1}:C${idx+1}`, [[schoolId, payload, new Date().toISOString()]], user.accessToken);
-      } else {
-        await appendSheet('SchoolProfiles!A:C', [[schoolId, payload, new Date().toISOString()]], user.accessToken);
-      }
       setSaved(key); setTimeout(() => setSaved(''), 3000);
-    } catch(e) {
-      alert('Save failed — make sure you are signed in with Google and the SchoolProfiles tab exists in the sheet.');
+    } catch (e) {
+      setOv(previous);
+      if (e instanceof AuthError) { alert(e.message); logout(e.message); }
+      else alert(`Save failed: ${e.message}`);
     }
     setSaving('');
   }
@@ -161,7 +148,7 @@ export default function OverviewTab({ schoolId }) {
           <>
             <div style={{ fontSize: 22, fontWeight: 600, color: '#e2e0db', marginBottom: 5 }}>{ov.name}</div>
             <div style={{ fontSize: 13, color: '#8b8885', marginBottom: 16, lineHeight: 1.6 }}>
-              {[ov.address, ov.grades, ov.leadPartner ? `Lead Partner: ${ov.leadPartner}` : null, 'SY25-26'].filter(Boolean).join(' · ')}
+              {[ov.address, ov.grades, ov.leadPartner ? `Lead Partner: ${ov.leadPartner}` : null, YEARS[YEARS.length - 1]].filter(Boolean).join(' · ')}
             </div>
             {ov.types && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, justifyContent: 'center', marginBottom: isEditor ? 14 : 0 }}>
